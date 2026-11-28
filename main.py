@@ -1,22 +1,31 @@
-# One word for my Wi-Fi: it vanishes mid-call, mid-download, mid-sentence —
-# present one moment, gone the next, never with an explanation.
-LINE = "Ghosting"
+#!/usr/bin/env python3
+"""One word for my Wi-Fi.
 
-# The entry must be a single word.
-assert len(LINE) >= 1, "word must not be empty"
-assert LINE == LINE.strip(), "word must not have leading or trailing whitespace"
-assert " " not in LINE and "\n" not in LINE and "\t" not in LINE, "entry must be a single word"
-assert LINE.isalpha(), "entry must be a single alphabetic word"
+The entry is a single English word, written to entry.txt. The program
+validates the word before writing it, so a bad word fails loudly
+instead of silently producing a bad entry.
+"""
 
-import os
+WORD = "Flaky"
 
-out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-os.makedirs(out_dir, exist_ok=True)
 
-with open(os.path.join(out_dir, "entry.txt"), "w", encoding="utf-8") as f:
-    f.write(LINE)
+def build_entry(word: str) -> str:
+    """Return the entry text for one word."""
+    cleaned = word.strip()
+    if not cleaned.isalpha():
+        raise ValueError("entry must be a single alphabetic word")
+    if not cleaned[0].isupper() or not cleaned[1:].islower():
+        raise ValueError("entry must be one capitalised word")
+    return cleaned + "\n"
 
-# Read back and verify: a silent bad write must fail loudly, not ship an empty file.
-with open(os.path.join(out_dir, "entry.txt"), encoding="utf-8") as f:
-    written = f.read()
-assert written == LINE, "entry.txt content does not match LINE"
+
+def main() -> None:
+    # Flaky: the signal comes and goes, and so does the connection.
+    text = build_entry(WORD)
+    assert text.strip() == WORD, "entry.txt must hold exactly the chosen word"
+    with open("entry.txt", "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
+if __name__ == "__main__":
+    main()
