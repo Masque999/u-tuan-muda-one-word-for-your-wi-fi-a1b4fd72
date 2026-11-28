@@ -21,19 +21,30 @@ def build_entry(word: str) -> str:
     return cleaned + "\n"
 
 
+def write_entry(text: str) -> None:
+    """Write the entry where the scorer expects it.
+
+    The scorer mounts the repository read-only, so the entry must go
+    to MAKEFUN_OUTPUT_DIR instead of the current directory. The
+    directory is created first and the file is read back to verify.
+    """
+    # The scorer only guarantees this directory is writable.
+    dest = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(dest, exist_ok=True)
+    assert os.path.isdir(dest), "output directory is not a directory"
+    target = os.path.join(dest, "entry.txt")
+    with open(target, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    with open(target, encoding="utf-8") as handle:
+        saved = handle.read()
+    assert saved == "Flaky\n", "entry.txt content does not match the chosen word"
+
+
 def main() -> None:
     # Flaky: the signal comes and goes, and so does the connection.
     text = build_entry(WORD)
     assert text.strip() == WORD, "entry.txt must hold exactly the chosen word"
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    entry_path = os.path.join(out_dir, "entry.txt")
-    with open(entry_path, "w", encoding="utf-8") as handle:
-        handle.write(text)
-    # Read back and verify: a silent bad write must fail loudly, not ship an empty file.
-    with open(entry_path, encoding="utf-8") as handle:
-        written = handle.read()
-    assert written == "Flaky\n", "entry.txt content does not match the chosen word"
+    write_entry(text)
 
 
 if __name__ == "__main__":
